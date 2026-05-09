@@ -1,0 +1,25 @@
+# Go
+/eip3009
+dist/
+*.test
+*.prof
+*.cover
+coverage.out
+
+# Foundry
+solidity-eip3009-token/lib/
+solidity-eip3009-token/out/
+solidity-eip3009-token/cache/
+solidity-eip3009-token/broadcast/
+
+# Local environment
+.env
+.env.*
+!.env.example
+
+# OS/editor
+.DS_Store
+.idea/
+.vscode/
+*.swp
+*.swo

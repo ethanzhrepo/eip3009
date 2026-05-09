@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  go:
+    name: Go
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Test
+        run: go test ./...
+
+      - name: Build
+        run: go build ./cmd/eip3009
+
+  forge:
+    name: Forge
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: solidity-eip3009-token
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install dependencies
+        run: |
+          forge install foundry-rs/forge-std@v1.16.1 --no-git --shallow
+          forge install OpenZeppelin/openzeppelin-contracts@v5.6.1 --no-git --shallow
+
+      - name: Format check
+        run: forge fmt --check
+
+      - name: Build
+        run: forge build
+
+      - name: Test
+        run: forge test
+
+  e2e:
+    name: Anvil E2E
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: Install Foundry
+        uses: foundry-rs/foundry-toolchain@v1
+        with:
+          version: stable
+
+      - name: Install Solidity dependencies
+        working-directory: solidity-eip3009-token
+        run: |
+          forge install foundry-rs/forge-std@v1.16.1 --no-git --shallow
+          forge install OpenZeppelin/openzeppelin-contracts@v5.6.1 --no-git --shallow
+
+      - name: Run Anvil E2E
+        run: ./scripts/e2e-anvil.sh
