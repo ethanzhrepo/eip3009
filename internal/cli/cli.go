@@ -52,6 +52,9 @@ func Run(args []string, in io.Reader, out io.Writer, errOut io.Writer) int {
 		return 2
 	}
 	if err != nil {
+		if errors.Is(err, flag.ErrHelp) {
+			return 0
+		}
 		fmt.Fprintln(errOut, "error:", err)
 		return 1
 	}
@@ -92,6 +95,22 @@ func newFlagSet(name string, errOut io.Writer) *flag.FlagSet {
 	return fs
 }
 
+func parseFlags(fs *flag.FlagSet, args []string, helpOut io.Writer) error {
+	if isHelpRequest(args) {
+		fs.SetOutput(helpOut)
+	}
+	return fs.Parse(args)
+}
+
+func isHelpRequest(args []string) bool {
+	for _, arg := range args {
+		if arg == "-h" || arg == "--help" {
+			return true
+		}
+	}
+	return false
+}
+
 func runCheck(ctx context.Context, args []string, out io.Writer, errOut io.Writer) error {
 	fs := newFlagSet("check", errOut)
 	var rpc rpcFlags
@@ -100,7 +119,7 @@ func runCheck(ctx context.Context, args []string, out io.Writer, errOut io.Write
 	rpc.add(fs)
 	fs.StringVar(&tokenArg, "token", "", "token contract address")
 	fs.BoolVar(&pretty, "pretty", false, "pretty-print JSON")
-	if err := fs.Parse(args); err != nil {
+	if err := parseFlags(fs, args, out); err != nil {
 		return err
 	}
 	rpcURL := rpc.value()
@@ -123,7 +142,7 @@ func runSign(args []string, in io.Reader, out io.Writer, errOut io.Writer) error
 	fs := newFlagSet("sign", errOut)
 	opts := signOptions{}
 	opts.addFlags(fs, true)
-	if err := fs.Parse(args); err != nil {
+	if err := parseFlags(fs, args, out); err != nil {
 		return err
 	}
 	signed, signatureValid, err := buildSignedAuthorization(opts, in, errOut)
@@ -157,7 +176,7 @@ func runExtract(ctx context.Context, args []string, in io.Reader, out io.Writer,
 	fs.IntVar(&decimals, "decimals", -1, "manual decimals fallback")
 	fs.StringVar(&symbol, "symbol", "", "manual symbol fallback")
 	fs.BoolVar(&pretty, "pretty", false, "pretty-print JSON")
-	if err := fs.Parse(args); err != nil {
+	if err := parseFlags(fs, args, out); err != nil {
 		return err
 	}
 	signed, err := readAuthorizationInput(messageArg, calldataArg, in)
@@ -218,7 +237,7 @@ func runCancel(ctx context.Context, args []string, in io.Reader, out io.Writer, 
 	opts := cancelOptions{}
 	rpc.add(fs)
 	opts.addFlags(fs)
-	if err := fs.Parse(args); err != nil {
+	if err := parseFlags(fs, args, out); err != nil {
 		return err
 	}
 	rpcURL := rpc.value()
@@ -275,7 +294,7 @@ func runBroadcast(ctx context.Context, args []string, in io.Reader, out io.Write
 	fs.BoolVar(&vOpts.normalizeV, "normalize-v", false, "normalize imported signature v=0/1 to v=27/28 before broadcasting")
 	fs.BoolVar(&vOpts.keepV, "keep-v", false, "broadcast imported signature v=0/1 unchanged")
 	fs.BoolVar(&vOpts.yes, "yes", false, "accept recommended non-destructive prompts")
-	if err := fs.Parse(args); err != nil {
+	if err := parseFlags(fs, args, out); err != nil {
 		return err
 	}
 	if err := vOpts.validate(); err != nil {

@@ -43,6 +43,25 @@ func TestSignDryRunPrintsUnsignedTypedData(t *testing.T) {
 	}
 }
 
+func TestCommandHelpExitsZeroAndDoesNotPrintError(t *testing.T) {
+	for _, command := range []string{"check", "sign", "extract", "cancel", "broadcast"} {
+		t.Run(command, func(t *testing.T) {
+			var out, errOut bytes.Buffer
+
+			code := Run([]string{"eip3009", command, "--help"}, strings.NewReader(""), &out, &errOut)
+			if code != 0 {
+				t.Fatalf("Run exit code = %d, stderr = %s", code, errOut.String())
+			}
+			if !strings.Contains(out.String(), "Usage of "+command) {
+				t.Fatalf("stdout = %q, want command usage", out.String())
+			}
+			if strings.Contains(errOut.String(), "error:") {
+				t.Fatalf("stderr = %q, want no error", errOut.String())
+			}
+		})
+	}
+}
+
 func TestSignWithStdinPrivateKeyVerifiesAndPrintsSignedWrapper(t *testing.T) {
 	privateKey := "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"
 	args := []string{
