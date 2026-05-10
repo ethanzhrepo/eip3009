@@ -81,6 +81,12 @@ fi
 echo "building CLI"
 go build -o "$CLI_BIN" "$ROOT_DIR/cmd/eip3009"
 
+echo "building Solidity test token"
+(
+  cd "$TOKEN_DIR"
+  forge build
+)
+
 echo "starting anvil on $RPC_URL"
 anvil --host 127.0.0.1 --port "$ANVIL_PORT" --chain-id "$CHAIN_ID" >"$ANVIL_LOG" 2>&1 &
 ANVIL_PID="$!"
@@ -97,6 +103,7 @@ DEPLOY_OUTPUT="$(
     --rpc-url "$RPC_URL" \
     --private-key "$DEPLOYER_KEY" \
     --broadcast \
+    --offline \
     src/EIP3009Token.sol:EIP3009Token \
     --constructor-args "Example USD" "xUSD" "1" 6 "$DEPLOYER"
 )"

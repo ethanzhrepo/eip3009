@@ -55,7 +55,7 @@ jobs:
         run: forge build
 
       - name: Test
-        run: forge test
+        run: forge test --offline
 
   e2e:
     name: Anvil E2E
@@ -80,6 +80,10 @@ jobs:
         run: |
           forge install foundry-rs/forge-std@v1.16.1 --no-git --shallow
           forge install OpenZeppelin/openzeppelin-contracts@v5.6.1 --no-git --shallow
+
+      - name: Build Solidity test token
+        working-directory: solidity-eip3009-token
+        run: forge build
 
       - name: Run Anvil E2E
         run: ./scripts/e2e-anvil.sh
